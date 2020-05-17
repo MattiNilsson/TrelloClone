@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import styled from "styled-components";
 import { Redirect } from 'react-router-dom';
+import axios from "axios";
 
 const Wrapper = styled.main`
 position: relative;
@@ -16,6 +17,7 @@ form{
   width: 300px;
   border: 1px solid gray;
   border-radius: 10px;
+  background-color: white;
 }
 form:hover{
   border: 1px solid rgb(41, 133, 185);
@@ -61,10 +63,15 @@ input:focus{
 .reg > p{
 margin-bottom: 0;
 }
+.err{
+  color: red;
+}
 `
 
 function RegisterComp(props){
   const [redirect, setRedirect] = useState(null);
+  const [data, setData] = useState({username : "", pass : "", repass : ""});
+  const [err, setErr] = useState("");
 
   function onRedirect(){
     console.log("hello");
@@ -74,16 +81,44 @@ function RegisterComp(props){
     return(<Redirect to={"/login"} />);
   }
 
+  const createUser = (e) => {
+    e.preventDefault();
+    if(data.pass !== data.repass){
+      console.error("passwords dont match");
+      setErr("passwords do not match");
+      return;
+    }
+    axios.post("/createUser", JSON.stringify({username : data.username, password : data.pass}), {
+      headers : {
+        "content-type" : "application/json"
+      }
+    })
+    .then(res => {
+      console.log(res);
+    })
+    .catch(error => {
+      console.log(error);
+      setErr(error.statusText);
+    })
+  }
+
+  const dataChange = (e) => {
+    let newData = {...data};
+    newData[e.target.name] = e.target.value;
+    setData(newData);
+  }
+
   return(
     <Wrapper>
       <h1>Register</h1>
-      <form>
+      <form onSubmit={(e) => createUser(e)}>
+        <label className="err">{err}</label>
         <label>username</label>
-        <input name="username"/>
+        <input onChange={(e) => {dataChange(e)}} name="username" value={data.username} required/>
         <label>password</label>
-        <input type="password" name="password"/>
+        <input type="password" onChange={(e) => {dataChange(e)}} name="pass" value={data.pass} required/>
         <label>re-password</label>
-        <input type="password" name="re-password"/>
+        <input type="password" onChange={(e) => {dataChange(e)}} name="repass" value={data.repass} required/>
         <button type="submit">Register</button>
       </form>
       <div className="reg">

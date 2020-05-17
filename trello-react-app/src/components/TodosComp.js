@@ -6,11 +6,13 @@ const Wrapper = styled.main`
   height: ${window.innerHeight * 0.8}px;
   position: absolute;
   left: ${window.innerWidth * 0.1}px;
-  top: ${window.innerHeight * 0.1}px;
+  top: ${window.innerHeight * 0.15}px;
   border: 1px solid gray;
   border-radius: 10px;
   display:flex;
   align-items: flex-start;
+  z-index: 2;
+  background-color: white;
 
   .list{
     margin-left: 5px;
@@ -19,7 +21,7 @@ const Wrapper = styled.main`
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    width: 300px;
+    width: 299px;
     height: auto;
     border: 1px solid gray;
     padding-bottom: 10px;
@@ -64,6 +66,38 @@ const Wrapper = styled.main`
   .list-start > h3{
     margin: 0;
     pointer-events:none;
+  }
+  .tabs{
+    width: auto;
+    height: 40px;
+    position: absolute;
+    top: -42px;
+    left: 10px;
+    z-index: -2;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+
+  }
+  .tab{
+    width: auto;
+    height: 40px;
+    border: 1px solid gray;
+    border-bottom: 0px;
+    background-color: rgba(255,255,255,.5);
+    margin-right: 5px;
+    border-radius: 10px 10px 0px 0px;
+  }
+  .tab:hover{
+    background-color: rgba(41, 133, 185, 0.1);
+    border: 1px solid rgb(41, 133, 185);
+    border-bottom: 0px;
+  }
+  .tab > h4{
+    padding-left: 30px;
+    padding-right: 30px;
+    margin-top: 5px;
+    color: gray;
   }
   .noselect {
     -webkit-touch-callout: none; /* iOS Safari */
@@ -127,6 +161,10 @@ function TodosComp(props){
 
   return(
     <Wrapper isDragging={isDragging}>
+      <div className="tabs">
+        <div className="tab"><h4>hello</h4></div>
+        <div className="tab"><h4>work for today</h4></div>
+      </div>
       <div className="list"
       onDrop={(e) => dropTodo(e)}
       onDragOver={(e) => dragTodoOver(e)}
@@ -141,6 +179,15 @@ function TodosComp(props){
           onDragEnd={(e) => dragEnd(e)}
           style={{order : 1}}
           >clean room</div>
+        <div 
+          className="todo noselect"
+          draggable="true"
+          id="12"
+          onDragStart={(e) => dragStart(e)}
+          onDragOver={(e) => dragOver(e)}
+          onDragEnd={(e) => dragEnd(e)}
+          style={{order : 2}}
+          >meet friends</div>
         <div 
           className="todo noselect"
           draggable="true"
@@ -165,6 +212,14 @@ function TodosComp(props){
         onDragOver={(e) => dragTodoOver(e)}
       >
         <div className="list-start"><h3 className="noselect">done</h3></div>
+      </div>
+      <div 
+        className="list" 
+        style={{order : 1}}
+        onDrop={(e) => dropTodo(e)}
+        onDragOver={(e) => dragTodoOver(e)}
+      >
+      <div className="list-start"><h3 className="noselect">done</h3></div>
       </div>
     </Wrapper>
   )

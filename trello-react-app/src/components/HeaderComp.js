@@ -7,7 +7,7 @@ const Wrapper = styled.header`
   height : 50px;
   background-color: white;
   border-bottom: 1px solid gray;
-
+  z-index: 2;
   h1{
     margin-top: 0;
   }
@@ -16,7 +16,7 @@ const Wrapper = styled.header`
 function HeaderComp(props){
   return(
     <Wrapper>
-      <h1>super todos</h1>
+      <h1>JUST TO-DO IT!</h1>
     </Wrapper>
   )
 }

@@ -16,6 +16,7 @@ form{
   width: 300px;
   border: 1px solid gray;
   border-radius: 10px;
+  background-color: white;
 }
 form:hover{
   border: 1px solid rgb(41, 133, 185);

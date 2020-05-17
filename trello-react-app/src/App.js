@@ -7,7 +7,7 @@ import HeaderComp from "./components/HeaderComp";
 import LoginComp from "./components/LoginComp";
 import RegisterComp from "./components/RegisterComp";
 import TodosComp from "./components/TodosComp";
-
+import TabsComp from "./components/TabsComp";
 
 function App() {
   return (
@@ -20,6 +20,8 @@ function App() {
         <Route path="/login" component={LoginComp} />
         <Route path="/register" component={RegisterComp} />
         <Route path="/todos" component={TodosComp} />
+        <Route path="/tabs" component={TabsComp} />
+        <div className="background"></div>
       </Router>
     </div>
   );
