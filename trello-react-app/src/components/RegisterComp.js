@@ -84,8 +84,13 @@ function RegisterComp(props){
   const createUser = (e) => {
     e.preventDefault();
     if(data.pass !== data.repass){
-      console.error("passwords dont match");
-      setErr("passwords do not match");
+      console.error("passwords dont match!");
+      setErr("passwords do not match!");
+      return;
+    }
+    if(data.username === "" || data.pass === "" || data.repass === ""){
+      console.error("please choose a username and password!");
+      setErr("please choose a username and password!");
       return;
     }
     axios.post("/createUser", JSON.stringify({username : data.username, password : data.pass}), {

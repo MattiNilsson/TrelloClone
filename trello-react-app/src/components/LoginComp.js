@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import styled from "styled-components";
 import { Redirect } from 'react-router-dom';
+import axios from "axios";
 
 const Wrapper = styled.main`
 position: relative;
@@ -66,23 +67,55 @@ margin-bottom: 0;
 
 function LoginComp(props){
   const [redirect, setRedirect] = useState(null);
+  const [data, setData] = useState({username : "", password : ""});
+  const [err, setErr] = useState("");
 
   function onRedirect(){
     console.log("hello");
-    setRedirect(true);
+    setRedirect("register");
   }
-  if(redirect){
+  if(redirect === "register"){
     return(<Redirect to={"/register"} />);
+  }
+
+  if(redirect === "todos"){
+    return(<Redirect to={"/todos"} />);
+  }
+
+  const onLogin = (e) => {
+    e.preventDefault();
+
+    if(data.username === "" || data.password === ""){
+      console.error("please write a username and password!");
+      setErr("please write a username and password!");
+      return;
+    }
+
+    axios.get("/user/" + data.username + "/pass/" + data.password)
+    .then((res) => {
+      console.log(res);
+      setRedirect("todos");
+      localStorage.setItem("user-id", JSON.stringify({id : res.data["user-id"], name : data.username}))
+    })
+    .catch((error) => {
+      console.log(error)
+    })
+  }
+
+  const onChangeValue = (e) => {
+    let newData = {...data};
+    newData[e.target.name] = e.target.value;
+    setData(newData);
   }
 
   return(
     <Wrapper>
       <h1>Login</h1>
-      <form>
+      <form onSubmit={(e) => onLogin(e)}>
         <label>username</label>
-        <input name="username"/>
+        <input name="username" value={data.username} onChange={(e) => onChangeValue(e)}/>
         <label>password</label>
-        <input type="password" name="password"/>
+        <input type="password" value={data.password} name="password" onChange={(e) => onChangeValue(e)}/>
         <button type="submit">Log in</button>
       </form>
       <div className="reg">

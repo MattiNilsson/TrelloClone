@@ -1,5 +1,9 @@
-import React, {useState, useEffect, useRef} from "react";
+import React, {useState, useEffect, useRef, useLayoutEffect} from "react";
 import styled from "styled-components";
+import axios from "axios";
+import { Redirect } from 'react-router-dom';
+
+import {tabinfo, newtab, newList} from "./miniComp/modals";
 
 const Wrapper = styled.main`
   width: ${window.innerWidth * 0.8}px;
@@ -87,6 +91,69 @@ const Wrapper = styled.main`
     background-color: rgba(255,255,255,.5);
     margin-right: 5px;
     border-radius: 10px 10px 0px 0px;
+    opacity: 0.8;
+    color: gray;
+  }
+  .selectedTab{
+    width: auto;
+    height: 40px;
+    border: 1px solid gray;
+    border-bottom: 1px solid white;
+    background-color: rgba(255,255,255,1);
+    margin-right: 5px;
+    border-radius: 10px 10px 0px 0px;
+    z-index: 2;
+    color: darkgray;
+    pointer-events:none;
+  }
+  .newTab{
+    position:relative;
+    top: 6px;
+    left: 5px;
+    width: 25px;
+    height: 25px;
+    border: 1.5px solid gray;
+    background-color: rgba(255,255,255,.5);
+    margin-right: 5px;
+    border-radius: 30px 30px 30px 30px;
+  }
+  .newTab > span{
+    font-size: 20px;
+    position: relative;
+    top: 2.5px;
+    color: gray;
+  }
+  .newTab:hover{
+    background-color: rgba(41, 133, 185, 0.1);
+    border: 1.5px solid rgb(41, 133, 185);
+  }
+  .newTab:hover > span{
+    color: rgb(41, 133, 185);
+  }
+  .newList{
+    position:relative;
+    top: 6px;
+    left: 5px;
+    width: 300px;
+    height: 60px;
+    border: 0.5px solid lightgray;
+    background-color: rgba(255,255,255,.5);
+    margin-right: 5px;
+    border-radius: 10px;
+    display:flex;
+    justify-content: center;
+    align-items:center;
+  }
+  .newList > span{
+    font-size: 20px;
+    color: gray;
+  }
+  .newList:hover{
+    background-color: rgba(41, 133, 185, 0.1);
+    border: 0.5px solid rgb(41, 133, 185);
+  }
+  .newList:hover > span{
+    color: rgb(41, 133, 185);
   }
   .tab:hover{
     background-color: rgba(41, 133, 185, 0.1);
@@ -94,10 +161,39 @@ const Wrapper = styled.main`
     border-bottom: 0px;
   }
   .tab > h4{
+    pointer-events:none;
+    position: relative;
+    left: 10px;
+    top: -5px;
     padding-left: 30px;
     padding-right: 30px;
     margin-top: 5px;
-    color: gray;
+  } 
+  .selectedTab > h4{
+    pointer-events:none;
+    position: relative;
+    left: 10px;
+    top: -5px;
+    padding-left: 30px;
+    padding-right: 30px;
+    margin-top: 5px;
+  }
+  .tab > h4 > span{
+    pointer-events:none;
+    color: rgba(0,0,0,0);
+    position: relative;
+    left: 20px;
+    top: 0px;
+  }
+  .selectedTab > h4 > span{
+    pointer-events: all;
+    position: relative;
+    left: 20px;
+    top: 0px;
+  }
+  .selectedTab > h4 > span:hover{
+    color: rgb(41, 133, 185);
+    cursor: pointer;
   }
   .noselect {
     -webkit-touch-callout: none; /* iOS Safari */
@@ -108,10 +204,206 @@ const Wrapper = styled.main`
               user-select: none; /* Non-prefixed version, currently
                                     supported by Chrome, Edge, Opera and Firefox */
   }
+
+  .modal{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: ${window.innerWidth}px;
+    height: ${window.innerHeight}px;
+    z-index: 5;
+    background-color: rgba(0,0,0,0.2);
+    display:flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modalWrapper{
+    position: relative;
+    width: 400px;
+    height: 500px;
+    background-color: white;
+    border: 1px solid gray;
+    border-radius: 10px;
+    display:flex;
+    align-items: center;
+    flex-direction: column;
+  }
+  .modalForm{
+    display:flex;
+    flex-direction: column;
+    width: 300px;
+  }
+  .modalForm > input{
+    border-radius: 20px;
+    border:1px solid gray;
+    padding: 4px;
+    text-align: center;
+    outline: none;
+  }
+  .modalForm > textarea{
+    max-width: 300px;
+    min-width: 300px;
+    max-height: 250px;
+    min-height: 250px;
+    height: 250px;
+  }
+  .modalForm > label{
+    margin-top: 10px;
+  }
+  .buttons{
+    position: absolute;
+    bottom: 10px;
+    margin-top: 10px;
+    width: 300px;
+    display:flex;
+    justify-content: space-around;
+  }
+  .buttons > button{
+    margin-top: 10px;
+    border: 1px solid gray;
+    border-radius: 10px;
+    background-color: white;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
 `
 
 function TodosComp(props){
   const [isDragging, setDragging] = useState(false);
+  const [isRedirect, setRedirect] = useState(false);
+
+  const [tabs, setTabs] = useState([]);
+  const [lists, setLists] = useState([]);
+
+  const [openModal, setModal] = useState(false);
+  const [sendInfo, setInfo] = useState({name : "", description : "", type : ""})
+  const [selectedTab, setSelectedTab] = useState("");
+
+  const [gotInfo, setGotInfo] = useState("");
+
+  useEffect(() => {
+    let storage = JSON.parse(localStorage.getItem("user-id"));
+    if(storage){
+      axios.get("/userTabs/" + storage.id)
+      .then((res) => {
+        console.log(res);
+        setTabs(res.data);
+        setSelectedTab(res.data[0]["tab-id"])
+
+        console.log(res.data[0]["tab-id"])
+        axios.get("/tabList/" + res.data[0]["tab-id"])
+        .then((response) => {
+          console.log(response);
+          setLists(response.data);
+        })
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+    }else{
+      console.log("not logged in")
+      setRedirect("login");
+    }
+  }, [])
+
+  if(isRedirect === "login"){
+    return(<Redirect to={"/login"} />);
+  }
+
+  const switchTab = (e) => {
+    e.stopPropagation();
+    setSelectedTab(e.target.id);
+    axios.get("/tabList/" + e.target.id)
+    .then((response) => {
+      console.log(response);
+      setLists(response.data);
+    })
+  }
+
+  const newTab = (e) => {
+    setModal("newTab");
+    let newInfo = {...sendInfo};
+    newInfo.type = "/createTab";
+    setInfo(newInfo);
+  }
+
+  const createList = (e) => {
+    setModal("newList");
+    let newInfo = {...sendInfo};
+    newInfo.type = "/createList";
+    setInfo(newInfo);
+  }
+
+  const tabInfo = (e, tabID) => {
+    let storage = JSON.parse(localStorage.getItem("user-id"));
+    axios.get("/userTabs/" + storage.id + "/tab/" + tabID)
+    .then((res) => {
+      console.log(res);
+      setGotInfo(res.data);
+      setModal("tabInfo");
+    })
+  }
+
+  const deleteTab = (e, tabID) => {
+    e.preventDefault();
+    let storage = JSON.parse(localStorage.getItem("user-id"));
+    axios.delete("/userTabs/" + storage.id + "/tab/" + gotInfo["tab-id"])
+    .then((res) => {
+      let newTabs = [...tabs];
+      for(let i = 0; i < newTabs.length; i++){
+        if(newTabs[i]["tab-id"] === gotInfo["tab-id"]){
+          newTabs.splice(i, 1);
+        }
+      }
+      console.log(res);
+      setTabs(newTabs);
+      setModal("false");
+      setGotInfo("");
+    })
+  }
+
+  const cancelModal = (e) => {
+    setModal("false");
+    setGotInfo("");
+  }
+
+  const changeInfo = (e) => {
+    let newInfo = {...sendInfo};
+    newInfo[e.target.name] = e.target.value;
+    setInfo(newInfo);
+  }
+
+  const submitInfo = (e) => {
+    e.preventDefault(e);
+    let storage = JSON.parse(localStorage.getItem("user-id"));
+    axios.post(sendInfo.type, {"user-id" : storage.id, name : sendInfo.name, description : sendInfo.description})
+    .then((res) => {
+      console.log(res);
+      setModal(false);
+      let newTabs = [...tabs];
+      newTabs.push(res.data)
+      setTabs(newTabs);
+    })
+    .catch((err) => {
+      console.log(err);
+    })
+  }
+
+  const submitList = (e) => {
+    e.preventDefault(e);
+    axios.post(sendInfo.type, {"tab-id" : selectedTab, name : sendInfo.name, description : sendInfo.description})
+    .then((res) => {
+      console.log(res);
+      setModal(false);
+      let newList = [...lists];
+      newList.push(res.data)
+      setLists(newList);
+    })
+    .catch((err) => {
+      console.log(err);
+    })
+  }
 
   const dropTodo = (e) => {
     e.preventDefault();
@@ -157,15 +449,52 @@ function TodosComp(props){
   const dragOver = (e) => {
     e.stopPropagation();
   }
-  console.log(isDragging);
 
   return(
-    <Wrapper isDragging={isDragging}>
+    <Wrapper isDragging={isDragging} >
+      {openModal !== "newTab" ? <div></div> : newtab(submitInfo, changeInfo, cancelModal)}
+
+      {openModal !== "tabInfo" ? <div></div> : tabinfo(gotInfo, cancelModal, deleteTab)}
+
+      {openModal !== "newList" ? <div></div> : newList(submitList, changeInfo, cancelModal)}
+
       <div className="tabs">
-        <div className="tab"><h4>hello</h4></div>
-        <div className="tab"><h4>work for today</h4></div>
+        {tabs.map((index, id) => {
+          return(<div 
+            className={selectedTab !== index["tab-id"] ? "tab" : "selectedTab"}
+            onClick={selectedTab !== index["tab-id"] ? (e) => switchTab(e) : null}
+            key={index["tab-id"]} 
+            id={index["tab-id"]}
+            >
+              <h4 style={{pointerEvents : "none"}}>{index["tab-name"]}
+                <span onClick={(e) => {tabInfo(e, index["tab-id"])}} className="material-icons">help_outline</span>
+              </h4>
+              </div>)
+        })}
+        <div className="newTab" onClick={(e) => newTab(e)}><span className="material-icons">add</span></div>
       </div>
-      <div className="list"
+      {lists.map((index, id) => {
+        return(
+          <div 
+            className="list" 
+            onDrop={(e) => dropTodo(e)}
+            onDragOver={(e) => dragTodoOver(e)}
+            key={index["list-id"]}
+          >
+            <div className="list-start"><h3 className="noselect">{index["list-name"]}</h3></div>
+          </div>
+        )
+      })}
+      {lists.length > 3 ? <div></div> : 
+        <div className="newList" onClick={(e) => createList(e)}><span className="material-icons">add</span></div>
+      }
+    </Wrapper>
+  )
+}
+
+export default TodosComp;
+
+/*<div className="list"
       onDrop={(e) => dropTodo(e)}
       onDragOver={(e) => dragTodoOver(e)}
       >
@@ -221,8 +550,4 @@ function TodosComp(props){
       >
       <div className="list-start"><h3 className="noselect">done</h3></div>
       </div>
-    </Wrapper>
-  )
-}
-
-export default TodosComp;
+*/
