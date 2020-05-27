@@ -3,7 +3,7 @@ import styled from "styled-components";
 import axios from "axios";
 import { Redirect } from 'react-router-dom';
 
-import {tabinfo, newtab, newList} from "./miniComp/modals";
+import {tabinfo, newtab, newList, listinfo, newtodo, todoinfo} from "./miniComp/modals";
 
 const Wrapper = styled.main`
   width: ${window.innerWidth * 0.8}px;
@@ -32,6 +32,17 @@ const Wrapper = styled.main`
     border-radius: 10px;
     pointer-events: all;
     transition: all 0.3s ease-out;
+    position: relative;
+  }
+  .list > span{
+    pointer-events: ${(props) => props.isDragging ? "none;" : "all;"}
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+  .list > span:hover{
+    cursor: pointer;
+    color : rgb(41, 133, 185);
   }
   .todo{
     width: 270px;
@@ -45,6 +56,7 @@ const Wrapper = styled.main`
     pointer-events: ${(props) => props.isDragging ? "none;" : "all;"}
     z-index: ${(props) => props.isDragging ? "-2;" : "1;"};
     padding-bottom: 0 !Important;
+    position: relative;
   }
   .dragTodo{
     width: 270px;
@@ -60,6 +72,17 @@ const Wrapper = styled.main`
   .todo:hover{
     background-color: rgba(41, 133, 185, 0.1);
     border: 1px solid rgb(41, 133, 185);
+  }
+  .todo > span{
+    position: absolute;
+    right: 10px;
+    color: gray;
+  }
+  .todo > span:hover{
+    position: absolute;
+    right: 10px;
+    color: rgb(41, 133, 185);
+    cursor: pointer;
   }
   .list-start{
     width: 280px;
@@ -155,6 +178,35 @@ const Wrapper = styled.main`
   .newList:hover > span{
     color: rgb(41, 133, 185);
   }
+
+  .newTodo{
+    position:relative;
+    top: 6px;
+    left: 5px;
+    width: 270px;
+    height: 34px;
+    border: 0.5px solid lightgray;
+    background-color: rgba(255,255,255,.5);
+    margin-right: 5px;
+    border-radius: 10px;
+    display:flex;
+    justify-content: center;
+    align-items:center;
+    pointer-events: ${(props) => props.isDragging ? "none;" : "all;"}
+    order: 1;
+  }
+  .newTodo > span{
+    font-size: 20px;
+    color: gray;
+  }
+  .newTodo:hover{
+    background-color: rgba(41, 133, 185, 0.1);
+    border: 0.5px solid rgb(41, 133, 185);
+  }
+  .newTodo:hover > span{
+    color: rgb(41, 133, 185);
+  }
+
   .tab:hover{
     background-color: rgba(41, 133, 185, 0.1);
     border: 1px solid rgb(41, 133, 185);
@@ -274,13 +326,21 @@ function TodosComp(props){
   const [isRedirect, setRedirect] = useState(false);
 
   const [tabs, setTabs] = useState([]);
+
   const [lists, setLists] = useState([]);
+  const [newListValues, setListValues] = useState({});
+
+  const [todoValues, setTodoValues] = useState({});
+
+  const [selectedList, setSelectedList] = useState();
 
   const [openModal, setModal] = useState(false);
   const [sendInfo, setInfo] = useState({name : "", description : "", type : ""})
   const [selectedTab, setSelectedTab] = useState("");
 
   const [gotInfo, setGotInfo] = useState("");
+
+  const [moveInfo, setMoveInfo] = useState({todoID : "", fromID : "", toID : ""})
 
   useEffect(() => {
     let storage = JSON.parse(localStorage.getItem("user-id"));
@@ -345,6 +405,25 @@ function TodosComp(props){
     })
   }
 
+  const listInfo = (e, listID) => {
+    axios.get("/tablist/" + selectedTab + "/list/" + listID)
+    .then((res) => {
+      console.log(res);
+      setGotInfo(res.data);
+      setModal("listInfo");
+    })
+  }
+
+  const todoInfo = (e, listID, todoID) => {
+    axios.get("/tablist/" + selectedTab + "/list/" + listID + "/todo/" + todoID)
+    .then((res) => {
+      console.log(res);
+      setGotInfo(res.data);
+      setTodoValues({listID : listID, todoID : todoID})
+      setModal("todoInfo");
+    })
+  }
+
   const deleteTab = (e, tabID) => {
     e.preventDefault();
     let storage = JSON.parse(localStorage.getItem("user-id"));
@@ -363,9 +442,154 @@ function TodosComp(props){
     })
   }
 
+  const deleteList = (e, listID) => {
+    e.preventDefault();
+    axios.delete("/tabList/" + selectedTab + "/list/" + gotInfo["list-id"])
+    .then((res) => {
+      let newLists = [...lists];
+      for(let i = 0; i < newLists.length; i++){
+        if(newLists[i]["list-id"] === gotInfo["list-id"]){
+          newLists.splice(i, 1);
+        }
+      }
+      console.log(res);
+      setLists(newLists)
+      setModal("false");
+      setGotInfo("");
+    })
+  }
+
+  const deleteTodo = (e, listID, todoID) => {
+    e.preventDefault();
+
+    console.log(todoValues.todoID);
+    
+    axios.delete("/tabList/" + selectedTab + "/list/" + todoValues.listID + "/todo/" + todoValues.todoID)
+    .then((res) => {
+      let newLists = [...lists];
+      for(let i = 0; i < newLists.length; i++){
+
+        if(newLists[i]["list-id"] === todoValues.listID){
+
+          for(let j = 0; j < newLists[i]["list-todos"].length; j++){
+
+            if(newLists[i]["list-todos"][j]["todo-id"] === todoValues.todoID){
+              newLists[i]["list-todos"].splice(j, 1);
+            }
+          }
+        }
+      }
+      console.log(res);
+      setLists(newLists)
+      setModal("false");
+      setGotInfo("");
+      setTodoValues({});
+    })
+  }
+
+  const inputChangeList = (e) => {
+    let values = {...newListValues};
+    values[e.target.name] = e.target.value;
+    setListValues(values);
+  }
+
+  const changeTodo = (e, newList) => {
+    e.preventDefault();
+    axios.put("/tabList/" + selectedTab + "/list/" + todoValues.listID + /todo/ + todoValues.todoID, JSON.stringify(newList), {
+      headers : {
+        "content-type" : "application/json"
+      }
+    })
+    .then((res) => {
+      console.log(res);
+      let newLists = [...lists];
+      for(let i = 0; i < newLists.length; i++){
+
+        if(newLists[i]["list-id"] === todoValues.listID){
+
+          for(let j = 0; j < newLists[i]["list-todos"].length; j++){
+            
+            if(newLists[i]["list-todos"][j]["todo-id"] === todoValues.todoID){
+
+              if(newList.name){
+                newLists[i]["list-todos"][j]["todo-name"] = newList.name;
+              }
+              if(newList.desc){
+                newLists[i]["list-todos"][j]["todo-description"] = newList.desc;
+              }
+            }
+          }
+        }
+      }
+      console.log(res);
+      setLists(newLists)
+      setModal("false");
+      setGotInfo("");
+      setListValues({});
+      setTodoValues({})
+    })
+  }
+
+  const changeList = (e, newList) => {
+    e.preventDefault();
+    axios.put("/tabList/" + selectedTab + "/list/" + gotInfo["list-id"], JSON.stringify(newList), {
+      headers : {
+        "content-type" : "application/json"
+      }
+    })
+    .then((res) => {
+      console.log(res);
+      let newLists = [...lists];
+      for(let i = 0; i < newLists.length; i++){
+        if(newLists[i]["list-id"] === gotInfo["list-id"]){
+          if(newList.name){
+            newLists[i]["list-name"] = newList.name;
+          }
+          if(newList.desc){
+            newLists[i]["list-description"] = newList.desc;
+          }
+        }
+      }
+      console.log(res);
+      setLists(newLists)
+      setModal("false");
+      setGotInfo("");
+      setListValues({});
+    })
+  }
+
+  const newTodo = (e, listId) => {
+    setModal("newTodo");
+    setSelectedList(listId);
+  }
+
+  const submitTodo = (e, info) => {
+    e.preventDefault();
+    console.log(info);
+    axios.post("/tabList/" + selectedTab + "/list/" + selectedList + "/createTodo", JSON.stringify(info),{
+      headers : {
+        "content-type" : "application/json"
+      }
+    })
+    .then((res) => {
+      console.log(res);
+      let newLists = [...lists];
+      for(let i = 0; i < newLists.length; i++){
+        if(newLists[i]["list-id"] === selectedList){
+            newLists[i]["list-todos"].push(res.data);
+        }
+      }
+      setLists(newLists);
+      setModal("false");
+    })
+  }
+
   const cancelModal = (e) => {
+    setListValues({});
     setModal("false");
     setGotInfo("");
+    setInfo({name : "", description : "", type : ""})
+    setSelectedList("");
   }
 
   const changeInfo = (e) => {
@@ -416,19 +640,35 @@ function TodosComp(props){
     todo.style.display = "block";
 
     e.target.appendChild(todo);
-    
+
+    // /moveTodo/:id/todo/:todoID/from/:listIDFrom/to/:listIDTo
+    if(moveInfo.fromID !== e.target.id){
+      axios.put("/moveTodo/" + selectedTab + "/todo/" + moveInfo.todoID + "/from/" + moveInfo.fromID + "/to/" + e.target.id)
+      .then((res) => {
+        console.log(res);
+      })
+    }
   }
+    
+  
 
   const dragTodoOver = (e) => {
     e.preventDefault();
   }
 
-  const dragStart = (e) => {
+  const dragStart = (e, listID) => {
     setDragging(true);
     const target = e.target;
     e.dataTransfer.setData("todo_id", target.id);
 
     target.className = "dragTodo";
+
+    let newMoveInfo = {...moveInfo}
+    newMoveInfo.todoID = target.id;
+    newMoveInfo.fromID = listID;
+    setMoveInfo(newMoveInfo);
+    console.log(target.id);
+    console.log(listID);
 
     setTimeout(() => {
       target.style.display = "none";
@@ -450,13 +690,22 @@ function TodosComp(props){
     e.stopPropagation();
   }
 
+  console.log(moveInfo);
+  console.log(isDragging);
+
   return(
     <Wrapper isDragging={isDragging} >
-      {openModal !== "newTab" ? <div></div> : newtab(submitInfo, changeInfo, cancelModal)}
+      {openModal !== "newTab" ? <div></div> : newtab(submitInfo, changeInfo, cancelModal, sendInfo)}
 
-      {openModal !== "tabInfo" ? <div></div> : tabinfo(gotInfo, cancelModal, deleteTab)}
+      {openModal !== "tabInfo" ? <div></div> : tabinfo(gotInfo, cancelModal, deleteTab, sendInfo)}
 
-      {openModal !== "newList" ? <div></div> : newList(submitList, changeInfo, cancelModal)}
+      {openModal !== "newList" ? <div></div> : newList(submitList, changeInfo, cancelModal, sendInfo)}
+
+      {openModal !== "listInfo" ? <div></div> : listinfo(gotInfo, cancelModal, deleteList, changeList, inputChangeList, newListValues)}
+
+      {openModal !== "newTodo" ? <div></div> : newtodo(submitTodo, changeInfo, cancelModal, sendInfo)}
+
+      {openModal !== "todoInfo" ? <div></div> : todoinfo(gotInfo, cancelModal, deleteTodo, changeTodo, inputChangeList, newListValues)}
 
       <div className="tabs">
         {tabs.map((index, id) => {
@@ -480,8 +729,26 @@ function TodosComp(props){
             onDrop={(e) => dropTodo(e)}
             onDragOver={(e) => dragTodoOver(e)}
             key={index["list-id"]}
+            id={index["list-id"]}
           >
             <div className="list-start"><h3 className="noselect">{index["list-name"]}</h3></div>
+            <span onClick={(e) => {listInfo(e, index["list-id"])}} className="material-icons">create</span>
+            {index["list-todos"].map((lindex, id) => {
+              return(
+                <div 
+                  key={lindex["todo-id"]}
+                  className="todo noselect"
+                  draggable="true"
+                  id={lindex["todo-id"]}
+                  onDragStart={(e) => dragStart(e, index["list-id"])}
+                  onDragOver={(e) => dragOver(e)}
+                  onDragEnd={(e) => dragEnd(e)}
+                  >{lindex["todo-name"]}
+                    <span onClick={(e) => {todoInfo(e, index["list-id"], lindex["todo-id"])}} className="material-icons">create</span>
+                  </div>
+              )
+            })}
+            <div className="newTodo" onClick={(e) => newTodo(e, index["list-id"])}><span className="material-icons">add</span></div>
           </div>
         )
       })}
@@ -493,61 +760,3 @@ function TodosComp(props){
 }
 
 export default TodosComp;
-
-/*<div className="list"
-      onDrop={(e) => dropTodo(e)}
-      onDragOver={(e) => dragTodoOver(e)}
-      >
-        <div className="list-start"><h3 className="noselect">to do</h3></div>
-        <div 
-          className="todo noselect" 
-          draggable="true"
-          id="11"
-          onDragStart={(e) => dragStart(e)}
-          onDragOver={(e) => dragOver(e)}
-          onDragEnd={(e) => dragEnd(e)}
-          style={{order : 1}}
-          >clean room</div>
-        <div 
-          className="todo noselect"
-          draggable="true"
-          id="12"
-          onDragStart={(e) => dragStart(e)}
-          onDragOver={(e) => dragOver(e)}
-          onDragEnd={(e) => dragEnd(e)}
-          style={{order : 2}}
-          >meet friends</div>
-        <div 
-          className="todo noselect"
-          draggable="true"
-          id="12"
-          onDragStart={(e) => dragStart(e)}
-          onDragOver={(e) => dragOver(e)}
-          onDragEnd={(e) => dragEnd(e)}
-          style={{order : 2}}
-          >meet friends</div>
-      </div>
-      <div className="list" 
-        style={{order : 1}}
-        onDrop={(e) => dropTodo(e)}
-        onDragOver={(e) => dragTodoOver(e)}
-      >
-        <div className="list-start"><h3 className="noselect">doing</h3></div>
-      </div>
-      <div 
-        className="list" 
-        style={{order : 1}}
-        onDrop={(e) => dropTodo(e)}
-        onDragOver={(e) => dragTodoOver(e)}
-      >
-        <div className="list-start"><h3 className="noselect">done</h3></div>
-      </div>
-      <div 
-        className="list" 
-        style={{order : 1}}
-        onDrop={(e) => dropTodo(e)}
-        onDragOver={(e) => dragTodoOver(e)}
-      >
-      <div className="list-start"><h3 className="noselect">done</h3></div>
-      </div>
-*/

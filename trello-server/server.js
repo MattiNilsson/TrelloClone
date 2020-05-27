@@ -198,9 +198,9 @@ app.get("/userTabs/:id/tab/:tabID", (req, res) => {
           return;
         }
       }
-      res.status(405).end();
+      res.status(404).end();
     }else{
-      res.status(406).end();
+      res.status(404).end();
     }
   }else{
     res.status(400).end();
@@ -213,13 +213,22 @@ app.delete("/userTabs/:id/tab/:tabID", (req,res) => {
       for(tab in tabsFile[req.params.id]){
         if(tabsFile[req.params.id][tab]["tab-id"] === req.params["tabID"]){
           tabsFile[req.params.id].splice(tab, 1);
-          res.status(204).send("deleted successfully");
+
+          fs.writeFile("./data/tabs.json", JSON.stringify(tabsFile), (err) => {
+            if(err){
+              console.error(err);
+              res.status(500).end();
+            }
+            console.log("tab removed");
+          })
+
+          res.status(204).end();
           return;
         }
       }
-      res.status(405).end();
+      res.status(404).end();
     }else{
-      res.status(406).end();
+      res.status(404).end();
     }
   }else{
     res.status(400).end();
@@ -279,6 +288,265 @@ app.get("/tabList/:id", (req, res) => {
       res.status(200).send(listFile[req.params.id]);
     }else{
       res.status(404).end();
+    }
+  }else{
+    res.status(400).end();
+  }
+})
+
+app.get("/tabList/:id/list/:listID", (req, res) => {
+  if(req.params.id){
+    if(listFile[req.params.id]){
+      for(list in listFile[req.params.id]){
+        if(listFile[req.params.id][list]["list-id"] === req.params["listID"]){
+          res.status(200).send(listFile[req.params.id][list]);
+          return;
+        }
+      }
+      res.status(400).end();
+    }else{
+      res.status(404).end();
+    }
+  }else{
+    res.status(400).end();
+  }
+})
+
+app.delete("/tabList/:id/list/:listID", (req, res) => {
+  if(req.params.id){
+    if(listFile[req.params.id]){
+      for(list in listFile[req.params.id]){
+        if(listFile[req.params.id][list]["list-id"] === req.params["listID"]){
+          listFile[req.params.id].splice(list, 1);
+
+          fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+            console.log("list deleted");
+          })
+
+          res.status(204).end();
+          return;
+        }
+      }
+      res.status(400).end();
+    }else{
+      res.status(404).end();
+    }
+  }else{
+    res.status(400).end();
+  }
+})
+
+app.put("/tabList/:id/list/:listID", (req, res) => {
+
+  if(req.body.name && req.params.id || req.body.desc && req.params.id){
+    if(listFile[req.params.id]){
+
+      for(list in listFile[req.params.id]){
+        if(listFile[req.params.id][list]["list-id"] === req.params["listID"]){
+
+          if(req.body.name){
+            listFile[req.params.id][list]["list-name"] = req.body.name;
+          }
+
+          if(req.body.desc){
+            listFile[req.params.id][list]["list-description"] = req.body.desc;
+          }
+
+          fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+            console.log("list deleted");
+          })
+
+          res.status(204).end();
+          return;
+        }
+      }
+      res.status(400).end();
+    }else{
+      res.status(404).end();
+    }
+  }else{
+    res.status(400).end();
+  }
+})
+
+// TODO HANDELERS
+
+app.post("/tabList/:id/List/:listID/createTodo", (req, res) => {
+  if(req.params.id && req.params.listID && req.body.name){
+
+    let today = new Date();
+    let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    let time = today.getHours() + ":" + today.getMinutes();
+    let dateTime = date+' '+time;
+
+    let newTodo = {
+      "todo-name" : req.body.name,
+      "todo-id" : uuidv4(),
+      "todo-description" : req.body.description,
+      "todo-date" : dateTime,
+    }
+
+    for(list in listFile[req.params.id]){
+      if(listFile[req.params.id][list]["list-id"] === req.params.listID){
+        listFile[req.params.id][list]["list-todos"].push(newTodo);
+      }
+    }
+
+    fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+      console.log("todo added");
+    })
+
+    res.status(200).send(newTodo);
+    return;
+  }else{
+    res.status(400).end();
+  }
+})
+
+app.get("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
+  if(req.params.id && req.params.listID && req.params.todoID){
+    console.log(req.params.listID)
+    if(listFile[req.params.id]){
+
+      for(list in listFile[req.params.id]){
+
+        if(listFile[req.params.id][list]["list-id"] === req.params.listID){
+          
+          for(todo in listFile[req.params.id][list]["list-todos"]){
+
+            if(listFile[req.params.id][list]["list-todos"][todo]["todo-id"] === req.params.todoID){
+              res.status(200).send(listFile[req.params.id][list]["list-todos"][todo]);
+              return;
+            }
+          }
+        }
+      }
+
+      res.status(400).end();
+    }else{
+      res.status(404).end();
+    }
+  }else{
+    res.status(400).end();
+  }
+})
+
+app.delete("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
+  if(req.params.id && req.params.listID && req.params.todoID){
+
+    console.log("ID TO DELETE", req.params.todoID);
+
+    if(listFile[req.params.id]){
+
+      for(list in listFile[req.params.id]){
+
+        if(listFile[req.params.id][list]["list-id"] === req.params.listID){
+
+          for(todo in listFile[req.params.id][list]["list-todos"]){
+
+            if(listFile[req.params.id][list]["list-todos"][todo]["todo-id"] === req.params.todoID){
+
+              listFile[req.params.id][list]["list-todos"].splice(todo, 1);
+
+              fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+                console.log("todo deleted");
+              })
+
+              res.status(204).end();
+              return;
+            }
+          }
+        }
+      }
+      res.status(400).end();
+    }else{
+      res.status(404).end();
+    }
+  }else{
+    res.status(400).end();
+  }
+})
+
+app.put("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
+
+  if(req.body.name && req.params.id || req.body.desc && req.params.id){
+    if(listFile[req.params.id]){
+
+      for(list in listFile[req.params.id]){
+
+        if(listFile[req.params.id][list]["list-id"] === req.params.listID){
+
+          for(todo in listFile[req.params.id][list]["list-todos"]){
+
+            if(listFile[req.params.id][list]["list-todos"][todo]["todo-id"] === req.params.todoID){
+
+              if(req.body.name){
+                listFile[req.params.id][list]["list-todos"][todo]["todo-name"] = req.body.name;
+              }
+    
+              if(req.body.desc){
+                listFile[req.params.id][list]["list-todos"][todo]["todo-description"] = req.body.desc;
+              }
+    
+              fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+                console.log("todo changed");
+              })
+    
+              res.status(204).end();
+              return;
+
+            }
+          }
+        }
+      }
+      res.status(400).end();
+    }else{
+      res.status(404).end();
+    }
+  }else{
+    res.status(400).end();
+  }
+})
+
+app.put("/moveTodo/:id/todo/:todoID/from/:listIDFrom/to/:listIDTo", (req, res) => {
+  if(req.params.listIDFrom && req.params.todoID){
+    let moveTodo;
+
+
+    // FIND TODO, SAVE TODO AND DELETE old TODO
+    for(list in listFile[req.params.id]){
+      if(moveTodo){
+        break;
+      }
+
+      if(listFile[req.params.id][list]["list-id"] === req.params.listIDFrom){
+
+        for(todo in listFile[req.params.id][list]["list-todos"]){
+
+          if(listFile[req.params.id][list]["list-todos"][todo]["todo-id"] === req.params.todoID){
+            moveTodo = listFile[req.params.id][list]["list-todos"][todo];
+
+            listFile[req.params.id][list]["list-todos"].splice(todo, 1);
+            break;
+          }
+        }
+      }
+    }
+
+    // PLACE TODO TO ITS NEW PLACE
+    for(list in listFile[req.params.id]){
+
+      if(listFile[req.params.id][list]["list-id"] === req.params.listIDTo){
+        listFile[req.params.id][list]["list-todos"].push(moveTodo);
+
+
+        fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+          console.log("todo moved");
+        })
+
+        res.status(204).end();
+        return;
+      }
     }
   }else{
     res.status(400).end();
