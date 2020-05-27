@@ -46,6 +46,7 @@ let listFile;
 
 fs.readFile("./data/users.json", (err, data) => {
   if(err){
+    console.error(err);
     res.status(500).end();
   }
   usersFile = JSON.parse(data);
@@ -53,12 +54,14 @@ fs.readFile("./data/users.json", (err, data) => {
 
 fs.readFile("./data/tabs.json", (err, data) => {
   if(err){
+    console.error(err);
     res.status(500).end();
   }
   tabsFile = JSON.parse(data);
 })
 fs.readFile("./data/list.json", (err, data) => {
   if(err){
+    console.error(err);
     res.status(500).end();
   }
   listFile = JSON.parse(data);
@@ -103,6 +106,10 @@ app.post("/createUser", (req, res) => {
     }
 
     fs.writeFile("./data/users.json", JSON.stringify(usersFile) ,function(err){
+      if(err){
+        console.error(err);
+        res.status(500).end();
+      }
       console.log("user created" + req.body.username);
     });
 
@@ -119,10 +126,14 @@ app.post("/createUser", (req, res) => {
     }]
 
     fs.writeFile("./data/tabs.json", JSON.stringify(tabsFile), (err) => {
+      if(err){
+        console.error(err);
+        res.status(500).end();
+      }
       console.log("tab created :" + req.body.name);
     })
 
-    res.status(200).send(usersFile);
+    res.status(201).send(usersFile);
   }else{
     console.log("does not work")
     res.status(400).end();
@@ -158,6 +169,10 @@ app.post("/createTab", (req, res) => {
     }]
 
     fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+      if(err){
+        console.error(err);
+        res.status(500).end();
+      }
       console.log("list created :" + req.body.name);
     })
 
@@ -169,9 +184,13 @@ app.post("/createTab", (req, res) => {
     }
 
     fs.writeFile("./data/tabs.json", JSON.stringify(tabsFile), (err) => {
+      if(err){
+        console.error(err);
+        res.status(500).end();
+      }
       console.log("tab created :" + req.body.name);
     })
-    res.status(200).send(newItem);
+    res.status(201).send(newItem);
   }else{
     res.status(404).end();
   }
@@ -274,9 +293,13 @@ app.post("/createList", (req,res) => {
     }
 
     fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+      if(err){
+        console.error(err);
+        res.status(500).end();
+      }
       console.log("list created :" + req.body.name);
     })
-    res.status(200).send(newItem);
+    res.status(201).send(newItem);
   }else{
     res.status(404).end();
   }
@@ -320,6 +343,10 @@ app.delete("/tabList/:id/list/:listID", (req, res) => {
           listFile[req.params.id].splice(list, 1);
 
           fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+            if(err){
+              console.error(err);
+              res.status(500).end();
+            }
             console.log("list deleted");
           })
 
@@ -353,6 +380,10 @@ app.put("/tabList/:id/list/:listID", (req, res) => {
           }
 
           fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+            if(err){
+              console.error(err);
+              res.status(500).end();
+            }
             console.log("list deleted");
           })
 
@@ -393,10 +424,14 @@ app.post("/tabList/:id/List/:listID/createTodo", (req, res) => {
     }
 
     fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+      if(err){
+        console.error(err);
+        res.status(500).end();
+      }
       console.log("todo added");
     })
 
-    res.status(200).send(newTodo);
+    res.status(201).send(newTodo);
     return;
   }else{
     res.status(400).end();
@@ -449,6 +484,10 @@ app.delete("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
               listFile[req.params.id][list]["list-todos"].splice(todo, 1);
 
               fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+                if(err){
+                  console.error(err);
+                  res.status(500).end();
+                }
                 console.log("todo deleted");
               })
 
@@ -489,6 +528,10 @@ app.put("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
               }
     
               fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+                if(err){
+                  console.error(err);
+                  res.status(500).end();
+                }
                 console.log("todo changed");
               })
     
@@ -541,6 +584,10 @@ app.put("/moveTodo/:id/todo/:todoID/from/:listIDFrom/to/:listIDTo", (req, res) =
 
 
         fs.writeFile("./data/list.json", JSON.stringify(listFile), (err) => {
+          if(err){
+            console.error(err);
+            res.status(500).end();
+          }
           console.log("todo moved");
         })
 

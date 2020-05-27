@@ -527,6 +527,7 @@ function TodosComp(props){
       setGotInfo("");
       setListValues({});
       setTodoValues({})
+      setInfo({name : "", description : "", type : ""})
     })
   }
 
@@ -555,6 +556,7 @@ function TodosComp(props){
       setModal("false");
       setGotInfo("");
       setListValues({});
+      setInfo({name : "", description : "", type : ""})
     })
   }
 
@@ -581,6 +583,7 @@ function TodosComp(props){
       }
       setLists(newLists);
       setModal("false");
+      setInfo({name : "", description : "", type : ""})
     })
   }
 
@@ -608,6 +611,7 @@ function TodosComp(props){
       let newTabs = [...tabs];
       newTabs.push(res.data)
       setTabs(newTabs);
+      setInfo({name : "", description : "", type : ""})
     })
     .catch((err) => {
       console.log(err);
@@ -623,6 +627,7 @@ function TodosComp(props){
       let newList = [...lists];
       newList.push(res.data)
       setLists(newList);
+      setInfo({name : "", description : "", type : ""})
     })
     .catch((err) => {
       console.log(err);

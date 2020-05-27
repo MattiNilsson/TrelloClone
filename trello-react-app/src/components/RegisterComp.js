@@ -58,7 +58,7 @@ input:focus{
 
 .reg{
   position: relative;
-  top: ${(window.innerHeight / 2) - 160}px;
+  top: ${(window.innerHeight / 2) - 200}px;
 }
 .reg > p{
 margin-bottom: 0;
@@ -100,6 +100,7 @@ function RegisterComp(props){
     })
     .then(res => {
       console.log(res);
+      setRedirect(true);
     })
     .catch(error => {
       console.log(error);
