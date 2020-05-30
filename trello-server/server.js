@@ -9,7 +9,6 @@ app.use(express.urlencoded());
 
 app.use((req, res, next) => {
   if(req.is("json")) {
-    console.log("hell0?")
     let data = "";
     req.on("data", chunk => {
       data += chunk.toString();
@@ -88,7 +87,7 @@ app.get("/user/:user/pass/:pass", (req, res) => {
 })
 
 app.post("/createUser", (req, res) => {
-  console.log("data", req.body);
+
   if(req.body.password && req.body.username){
 
     let exists = Object.getOwnPropertyNames(usersFile);
@@ -110,7 +109,6 @@ app.post("/createUser", (req, res) => {
         console.error(err);
         res.status(500).end();
       }
-      console.log("user created" + req.body.username);
     });
 
     let today = new Date();
@@ -130,12 +128,10 @@ app.post("/createUser", (req, res) => {
         console.error(err);
         res.status(500).end();
       }
-      console.log("tab created :" + req.body.name);
     })
 
     res.status(201).send(usersFile);
   }else{
-    console.log("does not work")
     res.status(400).end();
   }
 })
@@ -143,7 +139,7 @@ app.post("/createUser", (req, res) => {
 // TAB HANDELERS (user-id = [{"tab-name" : "","tab-id" : 0,"tab-description" : "", "tab-date" : ""}])
 
 app.post("/createTab", (req, res) => {
-  console.log(req.body)
+
   if(req.body["user-id"] || req.body.name){
 
     let today = new Date();
@@ -173,7 +169,6 @@ app.post("/createTab", (req, res) => {
         console.error(err);
         res.status(500).end();
       }
-      console.log("list created :" + req.body.name);
     })
 
     if(tabsFile[req.body["user-id"]]){
@@ -188,7 +183,6 @@ app.post("/createTab", (req, res) => {
         console.error(err);
         res.status(500).end();
       }
-      console.log("tab created :" + req.body.name);
     })
     res.status(201).send(newItem);
   }else{
@@ -238,7 +232,6 @@ app.delete("/userTabs/:id/tab/:tabID", (req,res) => {
               console.error(err);
               res.status(500).end();
             }
-            console.log("tab removed");
           })
 
           res.status(204).end();
@@ -258,9 +251,9 @@ app.delete("/userTabs/:id/tab/:tabID", (req,res) => {
 // todos : {"todo-name" : "","todo-id" : 0,"todo-description" : "", "todo-date" : ""}
 
 app.post("/createList", (req,res) => {
-  console.log(req.body)
+
   if(req.body["tab-id"] || req.body.name){
-    console.log("hello")
+
     let today = new Date();
     let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
     let time = today.getHours() + ":" + today.getMinutes();
@@ -297,7 +290,6 @@ app.post("/createList", (req,res) => {
         console.error(err);
         res.status(500).end();
       }
-      console.log("list created :" + req.body.name);
     })
     res.status(201).send(newItem);
   }else{
@@ -347,7 +339,6 @@ app.delete("/tabList/:id/list/:listID", (req, res) => {
               console.error(err);
               res.status(500).end();
             }
-            console.log("list deleted");
           })
 
           res.status(204).end();
@@ -384,7 +375,6 @@ app.put("/tabList/:id/list/:listID", (req, res) => {
               console.error(err);
               res.status(500).end();
             }
-            console.log("list deleted");
           })
 
           res.status(204).end();
@@ -428,7 +418,6 @@ app.post("/tabList/:id/List/:listID/createTodo", (req, res) => {
         console.error(err);
         res.status(500).end();
       }
-      console.log("todo added");
     })
 
     res.status(201).send(newTodo);
@@ -440,7 +429,7 @@ app.post("/tabList/:id/List/:listID/createTodo", (req, res) => {
 
 app.get("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
   if(req.params.id && req.params.listID && req.params.todoID){
-    console.log(req.params.listID)
+
     if(listFile[req.params.id]){
 
       for(list in listFile[req.params.id]){
@@ -469,8 +458,6 @@ app.get("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
 app.delete("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
   if(req.params.id && req.params.listID && req.params.todoID){
 
-    console.log("ID TO DELETE", req.params.todoID);
-
     if(listFile[req.params.id]){
 
       for(list in listFile[req.params.id]){
@@ -488,7 +475,7 @@ app.delete("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
                   console.error(err);
                   res.status(500).end();
                 }
-                console.log("todo deleted");
+
               })
 
               res.status(204).end();
@@ -532,7 +519,6 @@ app.put("/tabList/:id/list/:listID/todo/:todoID", (req, res) => {
                   console.error(err);
                   res.status(500).end();
                 }
-                console.log("todo changed");
               })
     
               res.status(204).end();
@@ -588,7 +574,6 @@ app.put("/moveTodo/:id/todo/:todoID/from/:listIDFrom/to/:listIDTo", (req, res) =
             console.error(err);
             res.status(500).end();
           }
-          console.log("todo moved");
         })
 
         res.status(204).end();
